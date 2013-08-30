@@ -1,4 +1,426 @@
-My GitHub Page
 
 
-<script src="https://gist.github.com/vrepsys/9e8b543c9a26b89284c8.js"></script>
+<!DOCTYPE HTML>
+<html>
+<head>
+  <link rel="stylesheet" type="text/css" href="css/style.css">
+</head>
+
+<body>
+
+  <div class="container">
+    <h1> Analysing Hacker News Metadata with R </h1>
+    <p class="summary">
+      This page provides a set of examples showing how you can extract various statistics from <a href='http://news.ycombinator.com'>Hacker News</a> meta-data using <a href="http://www.r-project.org/">R</a>.
+      Examples include simple simple statistics such as top domains and top commenters as well as more complex things like charting activity patterns of specific users and total activity outlier detection.
+      <a href='https://github.com/vrepsys/hn-analytics'>Datasets used are available on Github</a> - once you get them on your machine you should be able to run all the code below just by copy pasting it into R console.
+    </p>
+    <p> <span style="font-weight: bold">About me and disclaimer</span> You can find more about me on my <a href="http://valdemaras.repsys.me">homepage</a>. I'm interested in data and visualisation. I learned R while creating the examples below so don't take them for granted. If you notice any errors/mistakes or you know how to do the same things better please let me know! Let me know as well if you found this page useful or interesting! <br/> <br/>
+    <a href="#" class='hn-link'>Discuss on Hacker News</a>
+  
+  
+    </p>
+    
+    <h2> Loading the datasets </h2>
+    <p>
+      If you want to run the the code snippets on this page yourself and perhaps do some experiments of your own you're going to need to clone and extract the <a href='https://github.com/vrepsys/hn-analytics'>datasets from github</a>. 
+      You'll also have to download and install <a href="http://www.r-project.org/">R</a> or <a href="http://www.rstudio.com/">R Studio</a> (recommended).
+    </p>
+    <p> Once you've got hn_posts.csv and hn_comments.csv on your machine first thing you want to do is run the code below to load both datasets into R data frames and parse timestamp strings into a proper data format. We also set the global time zone and change it for each timestamp as well. I've chosen EST time zone because presumably the majority of HN users are based in the US and also because EST time is closer to Europen time zones than PTS. 
+    </p>
+    <p> Running the code below might take around 5 minutes depending on your machine. (There are ways to optimize this. I have chosen not to optimize too much in terms of speed or code reusability for the sake of simplicity). </p>
+  
+<div class="chunk" id="unnamed-chunk-1"><div class="rcode"><div class="source"><pre class="knitr r"><span class="functioncall">Sys.setenv</span>(TZ=<span class="string">"America/New_York"</span>)
+all_posts = <span class="functioncall">read.csv</span>(<span class="string">'/Users/valdemaras/workspace/hnsearch-scrape/csv/hn_posts.csv'</span>)
+all_posts$created_at = <span class="functioncall">as.POSIXct</span>(<span class="functioncall">strptime</span>(all_posts$created_at, <span class="string">"%Y-%m-%dT%H:%M:%SZ"</span>), <span class="string">"UTC"</span>)
+<span class="functioncall">attr</span>(all_posts$created_at, <span class="string">'tzone'</span>) = <span class="string">'America/New_York'</span>
+
+all_comments = <span class="functioncall">read.csv</span>(<span class="string">'/Users/valdemaras/workspace/hnsearch-scrape/csv/hn_comments.csv'</span>)
+all_comments$created_at = <span class="functioncall">as.POSIXct</span>(<span class="functioncall">strptime</span>(all_comments$created_at, <span class="string">"%Y-%m-%dT%H:%M:%SZ"</span>), <span class="string">"UTC"</span>)
+<span class="functioncall">attr</span>(all_comments$created_at, <span class="string">'tzone'</span>) = <span class="string">'America/New_York'</span>
+</pre></div></div></div>
+
+      
+   <p> If you are new to R it might be useful to know that you can type in ?command into console in order to find out what the command does. For example: </p>
+<div class="chunk" id="unnamed-chunk-2"><div class="rcode"><div class="source"><pre class="knitr r">?read.csv
+</pre></div></div></div>
+
+   <p> Code below outputs top rows of all_comments and all_posts data frames. Note that rows are sorted by date, that's because they were already sorted in the csv files.</p>
+<div class="chunk" id="unnamed-chunk-3"><div class="rcode"><div class="source"><pre class="knitr r"><span class="functioncall">head</span>(all_posts)
+</pre></div><div class="output"><pre class="knitr r">##   id          created_at    username             domain points
+## 1  1 2006-10-09 14:21:51          pg    ycombinator.com     39
+## 2  2 2006-10-09 14:30:28     phyllis     paulgraham.com     12
+## 3  3 2006-10-09 14:40:33     phyllis foundersatwork.com      7
+## 4  4 2006-10-09 14:47:42 onebeerdave      avc.blogs.com      6
+## 5  5 2006-10-09 14:51:04      perler     techcrunch.com      6
+## 6  6 2006-10-09 14:56:40      perler    360techblog.com      5
+</pre></div><div class="source"><pre class="knitr r"><span class="functioncall">head</span>(all_comments)
+</pre></div><div class="output"><pre class="knitr r">##   id parent_id          created_at      username points
+## 1 15         1 2006-10-09 15:51:01          sama      3
+## 2 17        15 2006-10-09 15:52:45            pg      4
+## 3 22        21 2006-10-09 22:18:22            pg      1
+## 4 23        20 2006-10-09 22:30:53 starklysnarky      2
+## 5 30        29 2006-10-10 11:34:59          spez      0
+## 6 31        30 2006-10-10 11:40:05            pg      1
+</pre></div></div></div>
+
+  
+  <h2> Simple statistics </h2>
+  <p>How many posts and comments are there in the datasets in total?</p>
+<div class="chunk" id="unnamed-chunk-4"><div class="rcode"><div class="source"><pre class="knitr r"><span class="functioncall">nrow</span>(all_posts)
+</pre></div><div class="output"><pre class="knitr r">## [1] 895782
+</pre></div><div class="source"><pre class="knitr r"><span class="functioncall">nrow</span>(all_comments)
+</pre></div><div class="output"><pre class="knitr r">## [1] 4670226
+</pre></div></div></div>
+
+      
+  <p>Top 10 users by number of comments</p>
+<div class="chunk" id="unnamed-chunk-5"><div class="rcode"><div class="source"><pre class="knitr r">all_comments$cnt = 1
+users = <span class="functioncall">aggregate</span>(cnt ~ username, all_comments, sum)
+users = users[<span class="functioncall">with</span>(users, <span class="functioncall">order</span>(-cnt)), ]
+<span class="functioncall">head</span>(users, n=10)
+</pre></div><div class="output"><pre class="knitr r">##          username   cnt
+## 124776    tptacek 23558
+## 56017    jacquesm 14667
+## 64003    jrockway 12381
+## 122640      Tichy  9444
+## 94743          pg  9393
+## 100691    rbanffy  8943
+## 29365      davidw  8502
+## 115438 stcredzero  8280
+## 38779         eru  7954
+## 93100     patio11  7250
+</pre></div></div></div>
+
+      
+  <p>Top 10 users by number of points for comments</p>
+<div class="chunk" id="unnamed-chunk-6"><div class="rcode"><div class="source"><pre class="knitr r">users = <span class="functioncall">aggregate</span>(points ~ username, all_comments, sum)
+users = users[<span class="functioncall">with</span>(users, <span class="functioncall">order</span>(-points)), ]
+<span class="functioncall">head</span>(users, n=10)
+</pre></div><div class="output"><pre class="knitr r">##         username points
+## 124776   tptacek 151719
+## 94743         pg 103765
+## 93100    patio11  78286
+## 56017   jacquesm  63419
+## 64003   jrockway  52829
+## 36445     edw519  44850
+## 29365     davidw  32145
+## 59150       jerf  30085
+## 135    _delirium  30035
+## 99565  raganwald  29677
+</pre></div></div></div>
+
+      
+  <p>Top 10 users by number of posts</p>
+<div class="chunk" id="unnamed-chunk-7"><div class="rcode"><div class="source"><pre class="knitr r">all_posts$cnt = 1
+users = <span class="functioncall">aggregate</span>(cnt ~ username, all_posts, sum)
+users = users[<span class="functioncall">with</span>(users, <span class="functioncall">order</span>(-cnt)), ]
+<span class="functioncall">head</span>(users, n=10)
+</pre></div><div class="output"><pre class="knitr r">##         username  cnt
+## 16081       cwan 6966
+## 66018 shawndumas 4984
+## 23544      evo_9 4593
+## 52424      nickb 4276
+## 32455   iProject 4237
+## 21738     edw519 3745
+## 10148   bootload 3592
+## 53644     nreece 3272
+## 61856       robg 2966
+## 26217    Garbage 2962
+</pre></div></div></div>
+
+      
+  <p>Top 10 users by number of points for posts</p>
+<div class="chunk" id="unnamed-chunk-8"><div class="rcode"><div class="source"><pre class="knitr r">users = <span class="functioncall">aggregate</span>(points ~ username, all_posts, sum)
+users = users[<span class="functioncall">with</span>(users, <span class="functioncall">order</span>(-points)), ]
+<span class="functioncall">head</span>(users, n=10)
+</pre></div><div class="output"><pre class="knitr r">##            username points
+## 43285       llambda  53454
+## 25030         fogus  47832
+## 14800   ColinWright  45959
+## 16081          cwan  45811
+## 56629            pg  39401
+## 66018    shawndumas  35731
+## 68870     ssclafani  35010
+## 23544         evo_9  32698
+## 16827 DanielRibeiro  31645
+## 52424         nickb  29598
+</pre></div></div></div>
+
+    
+  <p>Top 10 domains</p>
+<div class="chunk" id="unnamed-chunk-9"><div class="rcode"><div class="source"><pre class="knitr r">all_posts$cnt = 1
+domains = <span class="functioncall">aggregate</span>(cnt ~ domain, all_posts, sum)
+domains = domains[<span class="functioncall">with</span>(domains, <span class="functioncall">order</span>(-cnt)), ]
+<span class="functioncall">head</span>(domains, n=10)
+</pre></div><div class="output"><pre class="knitr r">##                  domain   cnt
+## 1                       67602
+## 114587   techcrunch.com 20097
+## 85822       nytimes.com 12610
+## 132330      youtube.com 11467
+## 50984        github.com 10803
+## 7263    arstechnica.com  9007
+## 129781        wired.com  7184
+## 97549  readwriteweb.com  5310
+## 75179      mashable.com  5239
+## 9835          bbc.co.uk  4999
+</pre></div></div></div>
+
+  <p>Top 5 by who posts .co.uk URLs</p>
+<div class="chunk" id="unnamed-chunk-10"><div class="rcode"><div class="source"><pre class="knitr r">couk_posts = all_posts[<span class="functioncall">grep</span>(<span class="string">'co.uk'</span>, all_posts$domain), ]
+users = <span class="functioncall">aggregate</span>(cnt ~ username, couk_posts, sum)
+users = users[<span class="functioncall">with</span>(users, <span class="functioncall">order</span>(-cnt)), ]
+<span class="functioncall">head</span>(users, n=10)
+</pre></div><div class="output"><pre class="knitr r">##             username cnt
+## 2530        iProject 382
+## 1163     ColinWright 332
+## 4726 RiderOfGiraffes 308
+## 789         bootload 197
+## 400        anons2011 186
+## 669       bensummers 174
+## 4272         paulund 172
+## 3976           nickb 171
+## 2131        gibsonf1 138
+## 1267            cwan 121
+</pre></div></div></div>
+
+      
+  <h2> Plotting user activity patterns </h2>
+  <p> Let's look into how to visualise user activity. For that we have to select specific user's posts and comments into separate data frames. 
+  I'll use the top user by number of points in the code and then also plot the rest of the top 5 users.   </p>
+<div class="chunk" id="unnamed-chunk-11"><div class="rcode"><div class="source"><pre class="knitr r">username = <span class="string">'tptacek'</span>
+users_comments = all_comments[all_comments$username == username, ]
+users_posts = all_posts[all_posts$username == username, ]
+</pre></div></div></div>
+
+  
+  <p> Next we're going to split the timestamps of both datasets into minutes (y axis) and dates (x axis). </p>
+<div class="chunk" id="unnamed-chunk-12"><div class="rcode"><div class="source"><pre class="knitr r">comment_dates = <span class="functioncall">trunc</span>(users_comments$created_at, <span class="string">'days'</span>)
+comment_minutes = <span class="functioncall">difftime</span>(users_comments$created_at, comment_dates, units=<span class="string">'mins'</span>)
+post_dates = <span class="functioncall">trunc</span>(users_posts$created_at, <span class="string">'days'</span>)
+post_minutes = <span class="functioncall">difftime</span>(users_posts$created_at, post_dates, units=<span class="string">'mins'</span>)
+</pre></div></div></div>
+
+  <p> We're going to plot comments first (black squares), then posts (red squares), and then draw ticks and labels on the y axis. </p>
+<div class="chunk" id="tptacek"><div class="rcode"><div class="source"><pre class="knitr r"><span class="functioncall">par</span>(mar=<span class="functioncall">c</span>(3, 3, 2, 0), mgp=<span class="functioncall">c</span>(1.5,0.2,0), las=1, cex.axis=0.7, pch=22)
+<span class="functioncall">plot</span>(comment_dates, comment_minutes, ylim=<span class="functioncall">c</span>(0,1439), xlab=<span class="string">'date'</span>, ylab=<span class="string">'time'</span>, main=username, yaxt=<span class="string">'n'</span>)
+<span class="functioncall">points</span>(post_dates, post_minutes, col=<span class="string">'red'</span>, pch=22)
+<span class="functioncall">par</span>(mgp=<span class="functioncall">c</span>(1,0.6,0), las=1)
+<span class="functioncall">axis</span>(2, at=0:23*60, cex.axis=0.7, labels=0:23)
+</pre></div></div><div class="rimage default"><img src="figure/tptacek.png" title="plot of chunk tptacek" alt="plot of chunk tptacek" class="plot" /></div></div>
+
+  
+  <p> Notice the gap somewhere between 2:00 and 10:00. Presumably this is night time in this particular user's timezone. 
+  Likely this user is located in the PTS timezone, which is 3 or 4 hours behind EST depending on daylight saving periods.</p>
+  
+  <p> Now let's look at other top 5 users' charts </p>
+  
+
+
+  
+
+
+<div class="chunk" id="pg"><div class="rimage default"><img src="figure/pg.png" title="plot of chunk pg" alt="plot of chunk pg" class="plot" /></div></div>
+
+  
+
+
+<div class="chunk" id="patio11"><div class="rimage default"><img src="figure/patio11.png" title="plot of chunk patio11" alt="plot of chunk patio11" class="plot" /></div></div>
+
+  
+  
+
+
+<div class="chunk" id="jacquesm"><div class="rimage default"><img src="figure/jacquesm.png" title="plot of chunk jacquesm" alt="plot of chunk jacquesm" class="plot" /></div></div>
+
+  
+
+
+<div class="chunk" id="jrockway"><div class="rimage default"><img src="figure/jrockway.png" title="plot of chunk jrockway" alt="plot of chunk jrockway" class="plot" /></div></div>
+
+  
+  <h2> Using xts to aggregate and filter time series </h2>
+  <p> <a href="http://cran.r-project.org/package=xts">xts</a> is a handy library for working with time series data in R. Before you start using it, however, you have to install it using the commands below </p>
+<div class="chunk" id="unnamed-chunk-13"><div class="rcode"><div class="source"><pre class="knitr r"><span class="functioncall">install.packages</span>(<span class="string">"xts"</span>)
+<span class="functioncall">require</span>(xts)
+</pre></div></div></div>
+
+
+
+  <p> In order to harness xts functionality we need to create an xts object. The first thing we do below is create an xts object with only a date index and then add a column called cnt which is equal to 1 for all dates (this will help us with aggregation).  </p> <p> Note that the rest of this text only deals with HN posts. The same commands should work for comments as well though. </p>
+<div class="chunk" id="unnamed-chunk-15"><div class="rcode"><div class="source"><pre class="knitr r">all_posts_xts = <span class="functioncall">xts</span>(order.by = all_posts$created_at)
+all_posts_xts = <span class="functioncall">merge</span>(all_posts_xts, cnt = 1)
+<span class="functioncall">head</span>(all_posts_xts)
+</pre></div><div class="output"><pre class="knitr r">##                     cnt
+## 2006-10-09 14:21:51   1
+## 2006-10-09 14:30:28   1
+## 2006-10-09 14:40:33   1
+## 2006-10-09 14:47:42   1
+## 2006-10-09 14:51:04   1
+## 2006-10-09 14:56:40   1
+</pre></div></div></div>
+
+  <p> Once we have an xts object we can use various aggregation and filtering functions. For example, let's aggregate the dates by month and plot the resulting object.<p>
+<div class="chunk" id="monthly posts"><div class="rcode"><div class="source"><pre class="knitr r">monthly_xts = <span class="functioncall">apply.monthly</span>(all_posts_xts, sum)
+<span class="comment"># Remove the last month since it does not contain full data</span>
+monthly_xts = monthly_xts[!<span class="functioncall">time</span>(monthly_xts) %<span class="keyword">in</span>% <span class="functioncall">time</span>(<span class="functioncall">last</span>(monthly_xts))]
+<span class="functioncall">par</span>(mar = <span class="functioncall">c</span>(3.5, 4, 2, 0), las = 1, cex.axis = 0.7)
+<span class="functioncall">plot</span>(monthly_xts, ylim = <span class="functioncall">c</span>(0, 25000), xlab = <span class="string">"month"</span>, ylab = <span class="string">"number of posts"</span>, 
+    main = <span class="string">"Monthly numbers of posts"</span>, mgp = <span class="functioncall">c</span>(2.2, 1, 0), yaxt = <span class="string">"n"</span>, major.ticks = <span class="string">"years"</span>)
+<span class="functioncall">par</span>(mgp = <span class="functioncall">c</span>(3, 0.6, 0))
+<span class="functioncall">axis</span>(2, at = 0:5 * 5000, cex.axis = 0.7, labels = 0:5 * 5000)
+</pre></div></div><div class="rimage default"><img src="figure/monthly posts.png" title="plot of chunk monthly posts" alt="plot of chunk monthly posts" class="plot" /></div></div>
+
+  <p> Let's aggregate post counts by day now </p>
+<div class="chunk" id="daily posts"><div class="rcode"><div class="source"><pre class="knitr r">daily_xts = <span class="functioncall">apply.daily</span>(all_posts_xts, sum)
+<span class="comment"># Remove the last day</span>
+daily_xts = daily_xts[!<span class="functioncall">time</span>(daily_xts) %<span class="keyword">in</span>% <span class="functioncall">time</span>(<span class="functioncall">last</span>(daily_xts))]
+<span class="functioncall">par</span>(mar = <span class="functioncall">c</span>(3.5, 4, 2, 0), las = 1, cex.axis = 0.7)
+<span class="functioncall">plot</span>(daily_xts, ylim = <span class="functioncall">c</span>(0, 1100), xlab = <span class="string">"day"</span>, ylab = <span class="string">"number of posts"</span>, main = <span class="string">"Daily numbers of posts"</span>, 
+    mgp = <span class="functioncall">c</span>(2.2, 1, 0), yaxt = <span class="string">"n"</span>, major.ticks = <span class="string">"years"</span>)
+<span class="functioncall">par</span>(mgp = <span class="functioncall">c</span>(1, 0.8, 0))
+<span class="functioncall">axis</span>(2, at = 0:11 * 100, cex.axis = 0.7, labels = 0:11 * 100)
+</pre></div></div><div class="rimage default"><img src="figure/daily posts.png" title="plot of chunk daily posts" alt="plot of chunk daily posts" class="plot" /></div></div>
+
+  <p> There's a lot of variation in the daily chart. It's not very easy to see all the data points since
+  many of them might be covered by lines connecting them. Let's try and draw the same plot, except for each data point we draw a little circle and no lines connecting them. </p>
+<div class="chunk" id="dayly posts (points)"><div class="rcode"><div class="source"><pre class="knitr r"><span class="functioncall">par</span>(mar = <span class="functioncall">c</span>(3.5, 4, 2, 0), las = 1, cex.axis = 0.7)
+<span class="functioncall">plot</span>(daily_xts, ylim = <span class="functioncall">c</span>(0, 1100), xlab = <span class="string">"day"</span>, ylab = <span class="string">"number of posts"</span>, main = <span class="string">"Daily numbers of posts"</span>, 
+    mgp = <span class="functioncall">c</span>(2.2, 1, 0), yaxt = <span class="string">"n"</span>, major.ticks = <span class="string">"years"</span>, type = <span class="string">"p"</span>)
+<span class="functioncall">par</span>(mgp = <span class="functioncall">c</span>(1, 0.8, 0))
+<span class="functioncall">axis</span>(2, at = 0:11 * 100, cex.axis = 0.7, labels = 0:11 * 100)
+</pre></div></div><div class="rimage default"><img src="figure/dayly posts (points).png" title="plot of chunk dayly posts (points)" alt="plot of chunk dayly posts (points)" class="plot" /></div></div>
+
+  
+  <p> There are two lines or two clusters of data points. Presumably the upper one contains weekday data points and the one below contains weekends. To make sure it's true we will
+  color weekends in red. </p>
+<div class="chunk" id="daily posts (coloured points)"><div class="rcode"><div class="source"><pre class="knitr r"><span class="functioncall">par</span>(mar = <span class="functioncall">c</span>(3.5, 4, 2, 0), las = 1, cex.axis = 0.7)
+<span class="functioncall">plot</span>(daily_xts[<span class="functioncall">.indexwday</span>(daily_xts) %<span class="keyword">in</span>% 1:5], ylim = <span class="functioncall">c</span>(0, 1100), xlab = <span class="string">"day"</span>, 
+    ylab = <span class="string">"number of posts"</span>, main = <span class="string">"Daily numbers of <span class="functioncall">posts</span> (weekends <span class="keyword">in</span> red)"</span>, 
+    mgp = <span class="functioncall">c</span>(2.2, 1, 0), yaxt = <span class="string">"n"</span>, major.ticks = <span class="string">"years"</span>, type = <span class="string">"p"</span>)
+<span class="functioncall">points</span>(daily_xts[<span class="functioncall">.indexwday</span>(daily_xts) %<span class="keyword">in</span>% <span class="functioncall">c</span>(0, 6)], type = <span class="string">"p"</span>, col = <span class="string">"red"</span>)
+<span class="functioncall">par</span>(mgp = <span class="functioncall">c</span>(1, 0.8, 0))
+<span class="functioncall">axis</span>(2, at = 0:11 * 100, cex.axis = 0.7, labels = 0:11 * 100)
+</pre></div></div><div class="rimage default"><img src="figure/daily posts (coloured points).png" title="plot of chunk daily posts (coloured points)" alt="plot of chunk daily posts (coloured points)" class="plot" /></div></div>
+
+  
+  
+  <h2> Outlier detection </h2>
+  <p> In the previous chart we can observe that weekdays have quite some outliers. Weekends seem to have only a few outliers on the days that fall just before the new year. The weekday outliers are presumably holidays. Assuming that the majority of HN readers are from the US those should be US holidays.</p>
+  <p> For the sake of simplicity let's only look at the dates starting from the 1st of January 2012 and ending on the 22nd July 2013 (the last full day on the dataset). </p>
+<div class="chunk" id="daily outliers"><div class="rcode"><div class="source"><pre class="knitr r">weekdays_xts = daily_xts[<span class="functioncall">.indexwday</span>(daily_xts) %<span class="keyword">in</span>% 1:5]
+weekdays_xts = weekdays_xts[<span class="string">"2012-01-01::2013-07-22"</span>]
+<span class="functioncall">par</span>(mar = <span class="functioncall">c</span>(3.5, 4, 2, 0), las = 1, cex.axis = 0.7)
+<span class="functioncall">head</span>(weekdays_xts)
+</pre></div><div class="output"><pre class="knitr r">##                     cnt
+## 2012-01-02 23:59:22 571
+## 2012-01-03 23:59:15 768
+## 2012-01-04 23:57:52 790
+## 2012-01-05 23:58:12 767
+## 2012-01-06 23:55:36 684
+## 2012-01-09 23:59:14 808
+</pre></div><div class="source"><pre class="knitr r"><span class="functioncall">plot</span>(weekdays_xts, ylim = <span class="functioncall">c</span>(200, 1100), xlab = <span class="string">"day"</span>, ylab = <span class="string">"number of posts"</span>, 
+    main = <span class="string">"Daily numbers of posts on weekdays"</span>, mgp = <span class="functioncall">c</span>(2.2, 1, 0), yaxt = <span class="string">"n"</span>, 
+    major.ticks = <span class="string">"months"</span>)
+<span class="functioncall">par</span>(mgp = <span class="functioncall">c</span>(1, 0.8, 0))
+<span class="functioncall">axis</span>(2, at = 2:11 * 100, cex.axis = 0.7, labels = 2:11 * 100)
+</pre></div></div><div class="rimage default"><img src="figure/daily outliers.png" title="plot of chunk daily outliers" alt="plot of chunk daily outliers" class="plot" /></div></div>
+
+  <p> To avoid/minimize the effects of trend and seasonality we're going to smooth the curve using lowess smoother and then find outliers on the residuals we'll get after subtracting every datapoint from its smoothed value.</p>
+<div class="chunk" id="daily outliers smoothed"><div class="rcode"><div class="source"><pre class="knitr r">datapoints = <span class="functioncall">coredata</span>(weekdays_xts)[, 1]
+smoothed_datapoints = <span class="functioncall">lowess</span>(datapoints, f = 1/10)
+index = <span class="functioncall">index</span>(weekdays_xts)
+<span class="functioncall">par</span>(mar = <span class="functioncall">c</span>(3.5, 4, 2, 0), las = 1, cex.axis = 0.7)
+<span class="functioncall">plot</span>(weekdays_xts, ylim = <span class="functioncall">c</span>(200, 1100), xlab = <span class="string">"day"</span>, ylab = <span class="string">"number of posts"</span>, 
+    main = <span class="string">"Daily numbers of posts on weekdays"</span>, mgp = <span class="functioncall">c</span>(2.2, 1, 0), yaxt = <span class="string">"n"</span>, 
+    major.ticks = <span class="string">"months"</span>)
+<span class="functioncall">lines</span>(index, smoothed_datapoints$y, col = <span class="string">"red"</span>)
+<span class="functioncall">axis</span>(2, at = 2:11 * 100, cex.axis = 0.7, labels = 2:11 * 100)
+</pre></div></div><div class="rimage default"><img src="figure/daily outliers smoothed.png" title="plot of chunk daily outliers smoothed" alt="plot of chunk daily outliers smoothed" class="plot" /></div></div>
+
+  
+  <p> Let's see how the detrended graph looks like and mark the outliers with red circles. </p>
+<div class="chunk" id="daily outliers detrended"><div class="rcode"><div class="source"><pre class="knitr r">weekdays_residuals = datapoints - smoothed_datapoints$y
+weekdays_residuals_xts = <span class="functioncall">xts</span>(weekdays_residuals, order.by = <span class="functioncall">index</span>(weekdays_xts))
+<span class="functioncall">par</span>(mar = <span class="functioncall">c</span>(3.5, 3, 2, 0), las = 1, cex.axis = 0.7)
+<span class="functioncall">plot</span>(weekdays_residuals_xts, ylim = <span class="functioncall">c</span>(-500, 300), xlab = <span class="string">"day"</span>, ylab = <span class="string">"residual"</span>, 
+    main = <span class="string">"Residuals + outliers marked"</span>, mgp = <span class="functioncall">c</span>(2.2, 1, 0), yaxt = <span class="string">"n"</span>, major.ticks = <span class="string">"months"</span>)
+outliers = <span class="functioncall">boxplot.stats</span>(weekdays_residuals)$out
+<span class="functioncall">points</span>(index[<span class="functioncall">which</span>(weekdays_residuals %<span class="keyword">in</span>% outliers)], weekdays_residuals[<span class="functioncall">which</span>(weekdays_residuals %<span class="keyword">in</span>% 
+    outliers)], col = <span class="string">"red"</span>)
+<span class="functioncall">axis</span>(2, at = -5:3 * 100, cex.axis = 0.7, labels = -5:3 * 100)
+</pre></div></div><div class="rimage default"><img src="figure/daily outliers detrended.png" title="plot of chunk daily outliers detrended" alt="plot of chunk daily outliers detrended" class="plot" /></div></div>
+
+  
+  <p> Next we output the outlier dates and draw the original weekday chart with outliers marked </p>
+<div class="chunk" id="daily outliers marked"><div class="rcode"><div class="source"><pre class="knitr r"><span class="comment"># outliers that have unusually high daily number of posts</span>
+outliers_high = outliers[outliers &gt; 0]
+<span class="comment"># outliers that have unusually low daily number of posts</span>
+outliers_low = outliers[outliers &lt; 0]
+index[<span class="functioncall">which</span>(weekdays_residuals %<span class="keyword">in</span>% outliers_high)]
+</pre></div><div class="output"><pre class="knitr r">## [1] "2012-01-18 23:55:15 EST" "2012-01-19 23:57:52 EST"
+## [3] "2013-07-02 23:59:23 EDT"
+</pre></div><div class="source"><pre class="knitr r">index[<span class="functioncall">which</span>(weekdays_residuals %<span class="keyword">in</span>% outliers_low)]
+</pre></div><div class="output"><pre class="knitr r">##  [1] "2012-01-02 23:59:22 EST" "2012-04-06 23:58:42 EDT"
+##  [3] "2012-05-28 23:57:56 EDT" "2012-09-03 23:59:24 EDT"
+##  [5] "2012-11-22 23:58:57 EST" "2012-11-23 23:55:45 EST"
+##  [7] "2012-12-24 23:56:51 EST" "2012-12-25 23:57:26 EST"
+##  [9] "2012-12-26 23:54:26 EST" "2012-12-27 23:55:58 EST"
+## [11] "2012-12-28 23:57:53 EST" "2012-12-31 23:53:29 EST"
+## [13] "2013-01-01 23:55:03 EST" "2013-03-29 23:57:17 EDT"
+## [15] "2013-05-27 23:52:01 EDT" "2013-07-04 23:52:44 EDT"
+## [17] "2013-07-05 23:58:14 EDT"
+</pre></div><div class="source"><pre class="knitr r"><span class="functioncall">par</span>(mar = <span class="functioncall">c</span>(3.5, 3, 2, 0), las = 1, cex.axis = 0.7)
+<span class="functioncall">plot</span>(weekdays_xts, ylim = <span class="functioncall">c</span>(200, 1100), xlab = <span class="string">"day"</span>, ylab = <span class="string">"number of posts"</span>, 
+    main = <span class="string">"Daily numbers of posts on weekdays"</span>, mgp = <span class="functioncall">c</span>(2.2, 1, 0), yaxt = <span class="string">"n"</span>, 
+    major.ticks = <span class="string">"months"</span>)
+<span class="functioncall">points</span>(index[<span class="functioncall">which</span>(weekdays_residuals %<span class="keyword">in</span>% outliers)], datapoints[<span class="functioncall">which</span>(weekdays_residuals %<span class="keyword">in</span>% 
+    outliers)], col = <span class="string">"red"</span>)
+<span class="functioncall">axis</span>(2, at = 2:11 * 100, cex.axis = 0.7, labels = 2:11 * 100)
+</pre></div></div><div class="rimage default"><img src="figure/daily outliers marked.png" title="plot of chunk daily outliers marked" alt="plot of chunk daily outliers marked" class="plot" /></div></div>
+
+  
+  <h2> Attempting to explain the outliers </h2>
+  <div class="clearfix">
+    <div style="float: left; width: 350px; margin-right: 30px;">
+      <p>
+        Most outliers are related to low numbers of posts due to holidays some of which are common to both US and Europe (e.g. Christmas), 
+        others only present only in the US (e.g. Thanksgiving).
+      <p>
+      <p> Christmas period is the largest outlier, this is probably because it's a holiday that's common across so many different countries. However, Thanksgiving is quite a large outlier too, that is probably because the majority of HN users are based in the US.</p>
+      <p> It's interesting that the 3 high outliers are not holidays but are very close to holidays. The 18th and the 17th of Jan 2012 are high outliers that come after the 16th of Jan which is Birthday of Martin Luther King, Jr. and the 2nd of July is very close to the 4th of July (Independence Day). Either there were more interesting news items during those days or people were reading and posting more stories for some other reason.</p>
+    </div>
+    <table style="float: left;width: 260px;">
+      <tr><td colspan="2" style="font-weight: bold;">Unusually low values</td></tr>
+      <tr><td style="width: 80px">2012-01-02</td><td>New Year's Day</td></tr>
+      <tr><td>2012-04-06</td><td>Good Friday</td></tr>
+      <tr><td>2012-05-28</td><td>Memorial Day</td></tr>
+      <tr><td>2012-09-03</td><td>Labor Day</td></tr>
+      <tr><td>2012-11-22</td><td>Thanksgiving Day</td></tr>
+      <tr><td>2012-11-23</td><td>Day after Thanksgiving</td></tr>
+      <tr><td>2012-12-24</td><td>Christmas Season </td></tr>
+      <tr><td>2012-12-25</td><td>Christmas Day</td></tr>
+      <tr><td>2012-12-26</td><td>Christmas Season</td></tr>
+      <tr><td>2012-12-27</td><td>Christmas Season</td></tr>
+      <tr><td>2012-12-28</td><td>Christmas Season</td></tr>
+      <tr><td>2012-12-31</td><td>Christmas Season</td></tr>
+      <tr><td>2013-01-01</td><td>New Year's Day</td></tr>
+      <tr><td>2013-03-29</td><td>Good Friday</td></tr>
+      <tr><td>2013-05-27</td><td>Memorial Day</td></tr>
+      <tr><td>2013-07-04</td><td>Independence Day</td></tr>
+      <tr><td>2013-07-05</td><td>Day after Independence Day</td></tr>
+    </table>
+    
+    <table style="float: left; width: 260px;">
+      <tr><td colspan="2" style="font-weight: bold;">Unusually high values</td></tr>
+      <tr><td style="width: 80px;">2012-01-18</td><td>Soon after Birthday of Martin Luther King, Jr.</td></tr>
+      <tr><td>2012-01-19</td><td>Soon after Birthday of Martin Luther King, Jr.</td></tr>
+      <tr><td>2013-07-02</td><td>July 4th approaching</td></tr>
+    </table>
+  </div>
+  
+  <h2>Final word</h2>
+  <p>I hope the examples will be useful for someone as a learning material or someone will enjoy seeing the HN stats charts. Please let me know if you do any interesting experiments with the <a href='https://github.com/vrepsys/hn-analytics'>HN meta-data posted on Github</a>. Leave any comments on <a href="" class="hn-link">this HN thread</a> or send me an email if you have a question (find my <a href="http://valdemaras.repsys.me">contact details on my homepage</a>).</p>
+  <div style="height: 120px;"></div>
+  
+  
