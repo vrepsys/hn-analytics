@@ -3,17 +3,28 @@
 <!DOCTYPE HTML>
 <html>
 <head>
+  <title>Analysing Hacker News Metadata with R</title>
+  <meta charset='utf-8'> 
   <link rel="stylesheet" type="text/css" href="css/style.css">
+  <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  
+    ga('create', 'UA-3527401-5', 'vrepsys.github.io');
+    ga('send', 'pageview');
+  
+  </script>
 </head>
 
 <body>
 
   <div class="container">
-    <h1> Analysing Hacker News Metadata with R </h1>
+    <h1 style="margin-bottom: 5px;"> Analysing Hacker News Metadata with R </h1>
+    <div class="name">by <a href="http://valdemaras.repsys.me">Val Repšys</a> &nbsp; &nbsp; 2012-09-03 </div>
     <p class="summary">
-      This page provides a set of examples showing how you can extract various statistics from <a href='http://news.ycombinator.com'>Hacker News</a> meta-data using <a href="http://www.r-project.org/">R</a>.
-      Examples include simple simple statistics such as top domains and top commenters as well as more complex things like charting activity patterns of specific users and total activity outlier detection.
-      <a href='https://github.com/vrepsys/hn-analytics'>Datasets used are available on Github</a> - once you get them on your machine you should be able to run all the code below just by copy pasting it into R console.
+      This page provides a set of examples showing how you can extract various statistics from <a href='http://news.ycombinator.com'>Hacker News</a> metadata using <a href="http://www.r-project.org/">R</a>: simple statistics such as <a href="#simple-stats">top domains and top commenters</a> as well as more complex things like <a href="#charts">charting activity patterns of specific users</a> and <a href="#outliers">activity outlier detection</a>. You can <a href="#charts">scroll down and just look at the charts</a> or go through the whole document and even run the code on your machine for the full experience.
     </p>
     <p> <span style="font-weight: bold">About me and disclaimer</span> You can find more about me on my <a href="http://valdemaras.repsys.me">homepage</a>. I'm interested in data and visualisation. I learned R while creating the examples below so don't take them for granted. If you notice any errors/mistakes or you know how to do the same things better please let me know! Let me know as well if you found this page useful or interesting! <br/> <br/>
     <a href="#" class='hn-link'>Discuss on Hacker News</a>
@@ -23,19 +34,19 @@
     
     <h2> Loading the datasets </h2>
     <p>
-      If you want to run the the code snippets on this page yourself and perhaps do some experiments of your own you're going to need to clone and extract the <a href='https://github.com/vrepsys/hn-analytics'>datasets from github</a>. 
-      You'll also have to download and install <a href="http://www.r-project.org/">R</a> or <a href="http://www.rstudio.com/">R Studio</a> (recommended).
+      If you want to run the the code snippets on this page yourself and perhaps do some experiments of your own you're going to need to clone and extract the <a href='https://github.com/vrepsys/hn-analytics'>datasets from Github</a>. 
+      You'll also have to download and install <a href="http://www.r-project.org/">R</a> or <a href="http://www.rstudio.com/">R Studio</a> (a lightweight IDE for R).
     </p>
-    <p> Once you've got hn_posts.csv and hn_comments.csv on your machine first thing you want to do is run the code below to load both datasets into R data frames and parse timestamp strings into a proper data format. We also set the global time zone and change it for each timestamp as well. I've chosen EST time zone because presumably the majority of HN users are based in the US and also because EST time is closer to Europen time zones than PTS. 
+    <p> Once you've got hn_posts.csv and hn_comments.csv on your machine, the first thing you want to do is run the code below to load both datasets into R data frames and parse timestamp strings into POSIXct date-time objects. We also set the global time zone and change it for each timestamp as well. I've chosen EST time zone because presumably the majority of HN users are based in the US and also because EST time is closer to Europen time zones than PST. 
     </p>
-    <p> Running the code below might take around 5 minutes depending on your machine. (There are ways to optimize this. I have chosen not to optimize too much in terms of speed or code reusability for the sake of simplicity). </p>
-  
+    <p> Before you run the code below remember to change the paths of the data files to where you have extracted them. </p>
+    <p> This code block is pretty slow and might take around 5 minutes depending on your machine (there are ways to optimize this. I have not done that, however, in order to keep things simple). </p>
 <div class="chunk" id="unnamed-chunk-1"><div class="rcode"><div class="source"><pre class="knitr r"><span class="functioncall">Sys.setenv</span>(TZ=<span class="string">"America/New_York"</span>)
-all_posts = <span class="functioncall">read.csv</span>(<span class="string">'/Users/valdemaras/workspace/hnsearch-scrape/csv/hn_posts.csv'</span>)
+all_posts = <span class="functioncall">read.csv</span>(<span class="string">'csv/hn_posts.csv'</span>)
 all_posts$created_at = <span class="functioncall">as.POSIXct</span>(<span class="functioncall">strptime</span>(all_posts$created_at, <span class="string">"%Y-%m-%dT%H:%M:%SZ"</span>), <span class="string">"UTC"</span>)
 <span class="functioncall">attr</span>(all_posts$created_at, <span class="string">'tzone'</span>) = <span class="string">'America/New_York'</span>
 
-all_comments = <span class="functioncall">read.csv</span>(<span class="string">'/Users/valdemaras/workspace/hnsearch-scrape/csv/hn_comments.csv'</span>)
+all_comments = <span class="functioncall">read.csv</span>(<span class="string">'csv/hn_comments.csv'</span>)
 all_comments$created_at = <span class="functioncall">as.POSIXct</span>(<span class="functioncall">strptime</span>(all_comments$created_at, <span class="string">"%Y-%m-%dT%H:%M:%SZ"</span>), <span class="string">"UTC"</span>)
 <span class="functioncall">attr</span>(all_comments$created_at, <span class="string">'tzone'</span>) = <span class="string">'America/New_York'</span>
 </pre></div></div></div>
@@ -65,7 +76,7 @@ all_comments$created_at = <span class="functioncall">as.POSIXct</span>(<span cla
 </pre></div></div></div>
 
   
-  <h2> Simple statistics </h2>
+  <h2 id="simple-stats"> Simple statistics </h2>
   <p>How many posts and comments are there in the datasets in total?</p>
 <div class="chunk" id="unnamed-chunk-4"><div class="rcode"><div class="source"><pre class="knitr r"><span class="functioncall">nrow</span>(all_posts)
 </pre></div><div class="output"><pre class="knitr r">## [1] 895782
@@ -75,11 +86,11 @@ all_comments$created_at = <span class="functioncall">as.POSIXct</span>(<span cla
 
       
   <p>Top 10 users by number of comments</p>
-<div class="chunk" id="unnamed-chunk-5"><div class="rcode"><div class="source"><pre class="knitr r">all_comments$cnt = 1
-users = <span class="functioncall">aggregate</span>(cnt ~ username, all_comments, sum)
-users = users[<span class="functioncall">with</span>(users, <span class="functioncall">order</span>(-cnt)), ]
+<div class="chunk" id="unnamed-chunk-5"><div class="rcode"><div class="source"><pre class="knitr r">all_comments$count = 1
+users = <span class="functioncall">aggregate</span>(count ~ username, all_comments, sum)
+users = users[<span class="functioncall">with</span>(users, <span class="functioncall">order</span>(-count)), ]
 <span class="functioncall">head</span>(users, n=10)
-</pre></div><div class="output"><pre class="knitr r">##          username   cnt
+</pre></div><div class="output"><pre class="knitr r">##          username count
 ## 124776    tptacek 23558
 ## 56017    jacquesm 14667
 ## 64003    jrockway 12381
@@ -93,7 +104,7 @@ users = users[<span class="functioncall">with</span>(users, <span class="functio
 </pre></div></div></div>
 
       
-  <p>Top 10 users by number of points for comments</p>
+  <p>Top 10 users by total number of points on their comments</p>
 <div class="chunk" id="unnamed-chunk-6"><div class="rcode"><div class="source"><pre class="knitr r">users = <span class="functioncall">aggregate</span>(points ~ username, all_comments, sum)
 users = users[<span class="functioncall">with</span>(users, <span class="functioncall">order</span>(-points)), ]
 <span class="functioncall">head</span>(users, n=10)
@@ -112,21 +123,21 @@ users = users[<span class="functioncall">with</span>(users, <span class="functio
 
       
   <p>Top 10 users by number of posts</p>
-<div class="chunk" id="unnamed-chunk-7"><div class="rcode"><div class="source"><pre class="knitr r">all_posts$cnt = 1
-users = <span class="functioncall">aggregate</span>(cnt ~ username, all_posts, sum)
-users = users[<span class="functioncall">with</span>(users, <span class="functioncall">order</span>(-cnt)), ]
+<div class="chunk" id="unnamed-chunk-7"><div class="rcode"><div class="source"><pre class="knitr r">all_posts$count = 1
+users = <span class="functioncall">aggregate</span>(count ~ username, all_posts, sum)
+users = users[<span class="functioncall">with</span>(users, <span class="functioncall">order</span>(-count)), ]
 <span class="functioncall">head</span>(users, n=10)
-</pre></div><div class="output"><pre class="knitr r">##         username  cnt
-## 16081       cwan 6966
-## 66018 shawndumas 4984
-## 23544      evo_9 4593
-## 52424      nickb 4276
-## 32455   iProject 4237
-## 21738     edw519 3745
-## 10148   bootload 3592
-## 53644     nreece 3272
-## 61856       robg 2966
-## 26217    Garbage 2962
+</pre></div><div class="output"><pre class="knitr r">##         username count
+## 16081       cwan  6966
+## 66018 shawndumas  4984
+## 23544      evo_9  4593
+## 52424      nickb  4276
+## 32455   iProject  4237
+## 21738     edw519  3745
+## 10148   bootload  3592
+## 53644     nreece  3272
+## 61856       robg  2966
+## 26217    Garbage  2962
 </pre></div></div></div>
 
       
@@ -148,12 +159,12 @@ users = users[<span class="functioncall">with</span>(users, <span class="functio
 </pre></div></div></div>
 
     
-  <p>Top 10 domains</p>
-<div class="chunk" id="unnamed-chunk-9"><div class="rcode"><div class="source"><pre class="knitr r">all_posts$cnt = 1
-domains = <span class="functioncall">aggregate</span>(cnt ~ domain, all_posts, sum)
-domains = domains[<span class="functioncall">with</span>(domains, <span class="functioncall">order</span>(-cnt)), ]
+  <p>Top 10 domains. Note that #1 represents posts with no domain: 'Show HN', 'Ask HN' and the like.   </p>
+<div class="chunk" id="unnamed-chunk-9"><div class="rcode"><div class="source"><pre class="knitr r">all_posts$count = 1
+domains = <span class="functioncall">aggregate</span>(count ~ domain, all_posts, sum)
+domains = domains[<span class="functioncall">with</span>(domains, <span class="functioncall">order</span>(-count)), ]
 <span class="functioncall">head</span>(domains, n=10)
-</pre></div><div class="output"><pre class="knitr r">##                  domain   cnt
+</pre></div><div class="output"><pre class="knitr r">##                  domain count
 ## 1                       67602
 ## 114587   techcrunch.com 20097
 ## 85822       nytimes.com 12610
@@ -166,26 +177,27 @@ domains = domains[<span class="functioncall">with</span>(domains, <span class="f
 ## 9835          bbc.co.uk  4999
 </pre></div></div></div>
 
-  <p>Top 5 by who posts .co.uk URLs</p>
+  <p>Top 10 by who have posted most of the .co.uk links</p>
 <div class="chunk" id="unnamed-chunk-10"><div class="rcode"><div class="source"><pre class="knitr r">couk_posts = all_posts[<span class="functioncall">grep</span>(<span class="string">'co.uk'</span>, all_posts$domain), ]
-users = <span class="functioncall">aggregate</span>(cnt ~ username, couk_posts, sum)
-users = users[<span class="functioncall">with</span>(users, <span class="functioncall">order</span>(-cnt)), ]
+users = <span class="functioncall">aggregate</span>(count ~ username, couk_posts, sum)
+users = users[<span class="functioncall">with</span>(users, <span class="functioncall">order</span>(-count)), ]
 <span class="functioncall">head</span>(users, n=10)
-</pre></div><div class="output"><pre class="knitr r">##             username cnt
-## 2530        iProject 382
-## 1163     ColinWright 332
-## 4726 RiderOfGiraffes 308
-## 789         bootload 197
-## 400        anons2011 186
-## 669       bensummers 174
-## 4272         paulund 172
-## 3976           nickb 171
-## 2131        gibsonf1 138
-## 1267            cwan 121
+</pre></div><div class="output"><pre class="knitr r">##             username count
+## 2530        iProject   382
+## 1163     ColinWright   332
+## 4726 RiderOfGiraffes   308
+## 789         bootload   197
+## 400        anons2011   186
+## 669       bensummers   174
+## 4272         paulund   172
+## 3976           nickb   171
+## 2131        gibsonf1   138
+## 1267            cwan   121
 </pre></div></div></div>
 
       
-  <h2> Plotting user activity patterns </h2>
+  <h2 id="charts"> Plotting user activity patterns</a></h2>
+  
   <p> Let's look into how to visualise user activity. For that we have to select specific user's posts and comments into separate data frames. 
   I'll use the top user by number of points in the code and then also plot the rest of the top 5 users.   </p>
 <div class="chunk" id="unnamed-chunk-11"><div class="rcode"><div class="source"><pre class="knitr r">username = <span class="string">'tptacek'</span>
@@ -194,24 +206,29 @@ users_posts = all_posts[all_posts$username == username, ]
 </pre></div></div></div>
 
   
-  <p> Next we're going to split the timestamps of both datasets into minutes (y axis) and dates (x axis). </p>
+  <p> Next we're going to split the timestamps of both datasets into minutes (y axis) and dates (x axis). Running the code below creates 4 arrays: dates arrays contain post/comment dates and minute arrays contain minutes past the date the post/comment was made.</p>
 <div class="chunk" id="unnamed-chunk-12"><div class="rcode"><div class="source"><pre class="knitr r">comment_dates = <span class="functioncall">trunc</span>(users_comments$created_at, <span class="string">'days'</span>)
 comment_minutes = <span class="functioncall">difftime</span>(users_comments$created_at, comment_dates, units=<span class="string">'mins'</span>)
 post_dates = <span class="functioncall">trunc</span>(users_posts$created_at, <span class="string">'days'</span>)
 post_minutes = <span class="functioncall">difftime</span>(users_posts$created_at, post_dates, units=<span class="string">'mins'</span>)
 </pre></div></div></div>
 
-  <p> We're going to plot comments first (black squares), then posts (red squares), and then draw ticks and labels on the y axis. </p>
-<div class="chunk" id="tptacek"><div class="rcode"><div class="source"><pre class="knitr r"><span class="functioncall">par</span>(mar=<span class="functioncall">c</span>(3, 3, 2, 0), mgp=<span class="functioncall">c</span>(1.5,0.2,0), las=1, cex.axis=0.7, pch=22)
+  <p> We're going to plot comments first (black squares), then posts (red squares), and then draw ticks and labels on the y axis.</p>
+<div class="chunk" id="tptacek"><div class="rcode"><div class="source"><pre class="knitr r"><span class="comment"># set parameters <span class="keyword">for</span> the <span class="keyword">next</span> thing to be drawn</span>
+<span class="functioncall">par</span>(mar=<span class="functioncall">c</span>(3, 3, 2, 0), mgp=<span class="functioncall">c</span>(1.5,0.2,0), las=1, cex.axis=0.7, pch=22)
+<span class="comment"># plot comments</span>
 <span class="functioncall">plot</span>(comment_dates, comment_minutes, ylim=<span class="functioncall">c</span>(0,1439), xlab=<span class="string">'date'</span>, ylab=<span class="string">'time'</span>, main=username, yaxt=<span class="string">'n'</span>)
+<span class="comment"># plot posts <span class="keyword">in</span> red</span>
 <span class="functioncall">points</span>(post_dates, post_minutes, col=<span class="string">'red'</span>, pch=22)
+# set parameters <span class="keyword">for</span> the <span class="keyword">next</span> thing to be <span class="functioncall">drawn</span> (axis)
 <span class="functioncall">par</span>(mgp=<span class="functioncall">c</span>(1,0.6,0), las=1)
+<span class="comment"># draw y axis</span>
 <span class="functioncall">axis</span>(2, at=0:23*60, cex.axis=0.7, labels=0:23)
 </pre></div></div><div class="rimage default"><img src="figure/tptacek.png" title="plot of chunk tptacek" alt="plot of chunk tptacek" class="plot" /></div></div>
 
   
   <p> Notice the gap somewhere between 2:00 and 10:00. Presumably this is night time in this particular user's timezone. 
-  Likely this user is located in the PTS timezone, which is 3 or 4 hours behind EST depending on daylight saving periods.</p>
+  Likely this user is located in the PST timezone, which is 3 or 4 hours behind EST depending on daylight saving periods.</p>
   
   <p> Now let's look at other top 5 users' charts </p>
   
@@ -240,24 +257,24 @@ post_minutes = <span class="functioncall">difftime</span>(users_posts$created_at
 
   
   <h2> Using xts to aggregate and filter time series </h2>
-  <p> <a href="http://cran.r-project.org/package=xts">xts</a> is a handy library for working with time series data in R. Before you start using it, however, you have to install it using the commands below </p>
+  <p> <a href="http://cran.r-project.org/package=xts">xts</a> is a handy library for working with time series data in R. Before you start using it, however, you have to install it using the commands below: </p>
 <div class="chunk" id="unnamed-chunk-13"><div class="rcode"><div class="source"><pre class="knitr r"><span class="functioncall">install.packages</span>(<span class="string">"xts"</span>)
 <span class="functioncall">require</span>(xts)
 </pre></div></div></div>
 
 
 
-  <p> In order to harness xts functionality we need to create an xts object. The first thing we do below is create an xts object with only a date index and then add a column called cnt which is equal to 1 for all dates (this will help us with aggregation).  </p> <p> Note that the rest of this text only deals with HN posts. The same commands should work for comments as well though. </p>
+  <p> In order to harness xts functionality we need to create an xts object. The first thing we do below is create an xts object with only a date index and then add a column called count which is equal to 1 for all dates (this will help us with aggregation).  </p> <p> Note that the rest of this text only deals with HN posts. The same commands should work for comments as well though. </p>
 <div class="chunk" id="unnamed-chunk-15"><div class="rcode"><div class="source"><pre class="knitr r">all_posts_xts = <span class="functioncall">xts</span>(order.by = all_posts$created_at)
-all_posts_xts = <span class="functioncall">merge</span>(all_posts_xts, cnt = 1)
+all_posts_xts = <span class="functioncall">merge</span>(all_posts_xts, count = 1)
 <span class="functioncall">head</span>(all_posts_xts)
-</pre></div><div class="output"><pre class="knitr r">##                     cnt
-## 2006-10-09 14:21:51   1
-## 2006-10-09 14:30:28   1
-## 2006-10-09 14:40:33   1
-## 2006-10-09 14:47:42   1
-## 2006-10-09 14:51:04   1
-## 2006-10-09 14:56:40   1
+</pre></div><div class="output"><pre class="knitr r">##                     count
+## 2006-10-09 14:21:51     1
+## 2006-10-09 14:30:28     1
+## 2006-10-09 14:40:33     1
+## 2006-10-09 14:47:42     1
+## 2006-10-09 14:51:04     1
+## 2006-10-09 14:56:40     1
 </pre></div></div></div>
 
   <p> Once we have an xts object we can use various aggregation and filtering functions. For example, let's aggregate the dates by month and plot the resulting object.<p>
@@ -282,8 +299,7 @@ daily_xts = daily_xts[!<span class="functioncall">time</span>(daily_xts) %<span 
 <span class="functioncall">axis</span>(2, at = 0:11 * 100, cex.axis = 0.7, labels = 0:11 * 100)
 </pre></div></div><div class="rimage default"><img src="figure/daily posts.png" title="plot of chunk daily posts" alt="plot of chunk daily posts" class="plot" /></div></div>
 
-  <p> There's a lot of variation in the daily chart. It's not very easy to see all the data points since
-  many of them might be covered by lines connecting them. Let's try and draw the same plot, except for each data point we draw a little circle and no lines connecting them. </p>
+  <p> In the chart above it seems as though the number of posts varies a lot day to day. It's hard to see what's really happening here because a lot of the data points might be covered by lines connecting them. Let's try and draw the same plot, except for each data point we draw a little circle and no lines to connect them. </p>
 <div class="chunk" id="dayly posts (points)"><div class="rcode"><div class="source"><pre class="knitr r"><span class="functioncall">par</span>(mar = <span class="functioncall">c</span>(3.5, 4, 2, 0), las = 1, cex.axis = 0.7)
 <span class="functioncall">plot</span>(daily_xts, ylim = <span class="functioncall">c</span>(0, 1100), xlab = <span class="string">"day"</span>, ylab = <span class="string">"number of posts"</span>, main = <span class="string">"Daily numbers of posts"</span>, 
     mgp = <span class="functioncall">c</span>(2.2, 1, 0), yaxt = <span class="string">"n"</span>, major.ticks = <span class="string">"years"</span>, type = <span class="string">"p"</span>)
@@ -305,20 +321,20 @@ daily_xts = daily_xts[!<span class="functioncall">time</span>(daily_xts) %<span 
 
   
   
-  <h2> Outlier detection </h2>
+  <h2 id="outliers"> Outlier detection </h2>
   <p> In the previous chart we can observe that weekdays have quite some outliers. Weekends seem to have only a few outliers on the days that fall just before the new year. The weekday outliers are presumably holidays. Assuming that the majority of HN readers are from the US those should be US holidays.</p>
   <p> For the sake of simplicity let's only look at the dates starting from the 1st of January 2012 and ending on the 22nd July 2013 (the last full day on the dataset). </p>
 <div class="chunk" id="daily outliers"><div class="rcode"><div class="source"><pre class="knitr r">weekdays_xts = daily_xts[<span class="functioncall">.indexwday</span>(daily_xts) %<span class="keyword">in</span>% 1:5]
 weekdays_xts = weekdays_xts[<span class="string">"2012-01-01::2013-07-22"</span>]
 <span class="functioncall">par</span>(mar = <span class="functioncall">c</span>(3.5, 4, 2, 0), las = 1, cex.axis = 0.7)
 <span class="functioncall">head</span>(weekdays_xts)
-</pre></div><div class="output"><pre class="knitr r">##                     cnt
-## 2012-01-02 23:59:22 571
-## 2012-01-03 23:59:15 768
-## 2012-01-04 23:57:52 790
-## 2012-01-05 23:58:12 767
-## 2012-01-06 23:55:36 684
-## 2012-01-09 23:59:14 808
+</pre></div><div class="output"><pre class="knitr r">##                     count
+## 2012-01-02 23:59:22   571
+## 2012-01-03 23:59:15   768
+## 2012-01-04 23:57:52   790
+## 2012-01-05 23:58:12   767
+## 2012-01-06 23:55:36   684
+## 2012-01-09 23:59:14   808
 </pre></div><div class="source"><pre class="knitr r"><span class="functioncall">plot</span>(weekdays_xts, ylim = <span class="functioncall">c</span>(200, 1100), xlab = <span class="string">"day"</span>, ylab = <span class="string">"number of posts"</span>, 
     main = <span class="string">"Daily numbers of posts on weekdays"</span>, mgp = <span class="functioncall">c</span>(2.2, 1, 0), yaxt = <span class="string">"n"</span>, 
     major.ticks = <span class="string">"months"</span>)
@@ -420,7 +436,8 @@ index[<span class="functioncall">which</span>(weekdays_residuals %<span class="k
   </div>
   
   <h2>Final word</h2>
-  <p>I hope the examples will be useful for someone as a learning material or someone will enjoy seeing the HN stats charts. Please let me know if you do any interesting experiments with the <a href='https://github.com/vrepsys/hn-analytics'>HN meta-data posted on Github</a>. Leave any comments on <a href="" class="hn-link">this HN thread</a> or send me an email if you have a question (find my <a href="http://valdemaras.repsys.me">contact details on my homepage</a>).</p>
+  <p>I hope the examples will be useful for someone as a learning material or someone will enjoy seeing the HN stats charts. Please let me know if you do any interesting experiments with the <a href='https://github.com/vrepsys/hn-analytics'>HN metadata posted on Github</a>. Leave any comments on <a href="" class="hn-link">this HN thread</a>. To get in touch send me an <a href="mailto:valdemaras@gmail.com?Subject=Hello">email</a> or <a href="https://twitter.com/vrepsys">follow me on twitter</a>. </p>
+  <p> Thanks to <a href="http://adom.as/">Adomas Paltanavičius</a> for proofreading this text.</p>
   <div style="height: 120px;"></div>
   
   

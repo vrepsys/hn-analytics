@@ -2,6 +2,12 @@ body {
   font-family: 'Verdana';
 }
 
+.name {
+  font-size: 13px;
+  color: #444;
+  margin-bottom: 10px;
+}
+
 .clearfix:after {
   content: ".";
   display: block;
