@@ -44,8 +44,8 @@
     </div>    
     
     
-    <p> <span style="font-weight: bold">About me and disclaimer</span> You can find more about me on my <a href="http://valdemaras.repsys.me">homepage</a>. I'm interested in data and visualisation. I learned R while creating the examples below so don't take them for granted. If you notice any errors/mistakes or you know how to do the same things better please let me know! Let me know as well if you found this page useful or interesting! <!--<br/> <br/>
-    <a href="#" class='hn-link'>Discuss on Hacker News</a>-->
+    <p> <span style="font-weight: bold">About me and disclaimer</span> You can find more about me on my <a href="http://valdemaras.repsys.me">homepage</a>. I'm interested in data and visualisation. I learned R while creating the examples below so don't take them for granted. If you notice any errors/mistakes or you know how to do the same things better please let me know! Let me know as well if you found this page useful or interesting! <br/> <br/>
+    <a href="https://news.ycombinator.com/item?id=6328218" class='hn-link'>Discuss on Hacker News</a>
   
   
     </p>
@@ -339,7 +339,7 @@ daily_xts = daily_xts[!<span class="functioncall">time</span>(daily_xts) %<span 
 
   
   
-  <h2> Outlier detection </h2>
+  <h2 id="daily-outliers"> Outlier detection </h2>
   <p> In the previous chart we can observe that weekdays have quite some outliers. Weekends seem to have only a few outliers on the days that fall just before the new year. The weekday outliers are presumably holidays. Assuming that the majority of HN readers are from the US those should be US holidays.</p>
   <p> For the sake of simplicity let's only look at the dates starting from the 1st of January 2012 and ending on the 22nd July 2013 (the last full day on the dataset). </p>
 <div class="chunk" id="daily outliers"><div class="rcode"><div class="source"><pre class="knitr r">weekdays_xts = daily_xts[<span class="functioncall">.indexwday</span>(daily_xts) %<span class="keyword">in</span>% 1:5]
@@ -454,7 +454,7 @@ index[<span class="functioncall">which</span>(weekdays_residuals %<span class="k
   </div>
   
   <h2>Final word</h2>
-  <p>I hope the examples will be useful for someone as a learning material or someone will enjoy seeing the HN stats charts. Please let me know if you do any interesting experiments with the <a href='https://github.com/vrepsys/hn-analytics'>HN metadata posted on Github</a>. <!--Leave any comments on <a href="" class="hn-link">this HN thread</a>.--> To get in touch send me an <a href="mailto:valdemaras@gmail.com?Subject=Hello">email</a> or <a href="https://twitter.com/vrepsys">follow me on twitter</a>. </p>
+  <p>I hope the examples will be useful for someone as a learning material or someone will enjoy seeing the HN stats charts. Please let me know if you do any interesting experiments with the <a href='https://github.com/vrepsys/hn-analytics'>HN metadata posted on Github</a>. Leave any comments on <a href="https://news.ycombinator.com/item?id=6328218" class="hn-link">this HN thread</a>. To get in touch send me an <a href="mailto:valdemaras@gmail.com?Subject=Hello">email</a> or <a href="https://twitter.com/vrepsys">follow me on twitter</a>. </p>
   <p> Thanks to <a href="http://adom.as/">Adomas Paltanavičius</a> for proofreading this text.</p>
   <div style="height: 120px;"></div>
   
