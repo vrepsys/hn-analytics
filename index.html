@@ -22,12 +22,30 @@
 
   <div class="container">
     <h1 style="margin-bottom: 5px;"> Analysing Hacker News Metadata with R </h1>
-    <div class="name">by <a href="http://valdemaras.repsys.me">Val Repšys</a> &nbsp; &nbsp; 2012-09-03 </div>
+    <div class="name">by <a href="http://valdemaras.repsys.me">Val Repšys</a> &nbsp; &nbsp; 2012-09-04 </div>
     <p class="summary">
-      This page provides a set of examples showing how you can extract various statistics from <a href='http://news.ycombinator.com'>Hacker News</a> metadata using <a href="http://www.r-project.org/">R</a>: simple statistics such as <a href="#simple-stats">top domains and top commenters</a> as well as more complex things like <a href="#charts">charting activity patterns of specific users</a> and <a href="#outliers">activity outlier detection</a>. You can <a href="#charts">scroll down and just look at the charts</a> or go through the whole document and even run the code on your machine for the full experience.
+      This page provides a set of examples showing how you can extract various statistics from <a href='http://news.ycombinator.com'>Hacker News</a> metadata using <a href="http://www.r-project.org/">R</a>: simple statistics such as <a href="#simple-stats">top domains and top commenters</a> as well as more complex things like <a href="#charts">charting activity patterns of specific users</a> and <a href="#daily-outliers">activity outlier detection</a>. You can use the thumbnails to scroll down and just take a quick look at the charts or you can go through the whole document and even run the code on your machine for the full experience.
     </p>
-    <p> <span style="font-weight: bold">About me and disclaimer</span> You can find more about me on my <a href="http://valdemaras.repsys.me">homepage</a>. I'm interested in data and visualisation. I learned R while creating the examples below so don't take them for granted. If you notice any errors/mistakes or you know how to do the same things better please let me know! Let me know as well if you found this page useful or interesting! <br/> <br/>
-    <a href="#" class='hn-link'>Discuss on Hacker News</a>
+    
+    <div class="clearfix">
+      <a href="#activity-tptacek" class="thumbnail"><img src="figure/tptacek.png" title="Daily activity chart: tptacek" /></a>
+      <a href="#activity-pg" class="thumbnail"><img src="figure/pg.png" title="Daily activity chart: pg" /></a>
+      <a href="#activity-patio11" class="thumbnail"><img src="figure/patio11.png" title="Daily activity chart: patio11" /></a>
+      <a href="#activity-jacquesm" class="thumbnail"><img src="figure/jacquesm.png" title="Daily activity chart: jacquesm" /></a>
+      <a href="#activity-jrockway" class="thumbnail"><img src="figure/jrockway.png" title="Daily activity chart: jrockway" /></a>
+      <a href="#monthly-posts" class="thumbnail"><img src="figure/monthly posts.png" title="Monthly numbers of posts" /></a>
+      <a href="#daily-posts" class="thumbnail"><img src="figure/daily posts.png" title="Daily numbers of posts" /></a>
+      <a href="#daily-posts-circles" class="thumbnail"><img src="figure/dayly posts (points).png" title="Daily numbers of posts (circles)" /></a>
+      <a href="#daily-posts-coloured-circles" class="thumbnail"><img src="figure/daily posts (coloured points).png" title="Daily numbers of posts (coloured circles)" /></a>
+      <a href="#outliers" class="thumbnail"><img src="figure/daily outliers.png" title="Daily numbers of posts from 2011-01-01 to 2013-07-22" /></a>
+      <a href="#outliers-smoothed" class="thumbnail"><img src="figure/daily outliers smoothed.png" title="Daily numbers of posts from 2011-01-01 to 2013-07-22 + smoothed curve" /></a>
+      <a href="#outliers-detrended" class="thumbnail"><img src="figure/daily outliers detrended.png" title="Daily numbers of posts from 2011-01-01 to 2013-07-22 detrended" /></a>
+      <a href="#outliers-marked" class="thumbnail"><img src="figure/daily outliers marked.png" title="Daily numbers of posts from 2011-01-01 to 2013-07-22, outliers marked" /></a>
+    </div>    
+    
+    
+    <p> <span style="font-weight: bold">About me and disclaimer</span> You can find more about me on my <a href="http://valdemaras.repsys.me">homepage</a>. I'm interested in data and visualisation. I learned R while creating the examples below so don't take them for granted. If you notice any errors/mistakes or you know how to do the same things better please let me know! Let me know as well if you found this page useful or interesting! <!--<br/> <br/>
+    <a href="#" class='hn-link'>Discuss on Hacker News</a>-->
   
   
     </p>
@@ -214,46 +232,46 @@ post_minutes = <span class="functioncall">difftime</span>(users_posts$created_at
 </pre></div></div></div>
 
   <p> We're going to plot comments first (black squares), then posts (red squares), and then draw ticks and labels on the y axis.</p>
-<div class="chunk" id="tptacek"><div class="rcode"><div class="source"><pre class="knitr r"><span class="comment"># set parameters <span class="keyword">for</span> the <span class="keyword">next</span> thing to be drawn</span>
+<div class="chunk" id="tptacek"><div class="rcode"><div class="source"><pre class="knitr r"><span class="comment"># set parameters for the next thing to be drawn</span>
 <span class="functioncall">par</span>(mar=<span class="functioncall">c</span>(3, 3, 2, 0), mgp=<span class="functioncall">c</span>(1.5,0.2,0), las=1, cex.axis=0.7, pch=22)
 <span class="comment"># plot comments</span>
 <span class="functioncall">plot</span>(comment_dates, comment_minutes, ylim=<span class="functioncall">c</span>(0,1439), xlab=<span class="string">'date'</span>, ylab=<span class="string">'time'</span>, main=username, yaxt=<span class="string">'n'</span>)
-<span class="comment"># plot posts <span class="keyword">in</span> red</span>
+<span class="comment"># plot posts in red</span>
 <span class="functioncall">points</span>(post_dates, post_minutes, col=<span class="string">'red'</span>, pch=22)
-# set parameters <span class="keyword">for</span> the <span class="keyword">next</span> thing to be <span class="functioncall">drawn</span> (axis)
+<span class="comment"># set parameters for the next thing to be drawn (axis)</span>
 <span class="functioncall">par</span>(mgp=<span class="functioncall">c</span>(1,0.6,0), las=1)
 <span class="comment"># draw y axis</span>
 <span class="functioncall">axis</span>(2, at=0:23*60, cex.axis=0.7, labels=0:23)
-</pre></div></div><div class="rimage default"><img src="figure/tptacek.png" title="plot of chunk tptacek" alt="plot of chunk tptacek" class="plot" /></div></div>
+</pre></div></div><div class="rimage default"><img id="activity-tptacek" src="figure/tptacek.png" title="plot of chunk tptacek" alt="plot of chunk tptacek" class="plot" /></div></div>
 
   
   <p> Notice the gap somewhere between 2:00 and 10:00. Presumably this is night time in this particular user's timezone. 
   Likely this user is located in the PST timezone, which is 3 or 4 hours behind EST depending on daylight saving periods.</p>
   
-  <p> Now let's look at other top 5 users' charts </p>
+  <p> Below find other top 5 users' charts. One thing that struck me about those charts is the lack of apparent sleep patterns in some of them. Other than that I will leave the reader to make their own conclusions. </p>
   
 
 
   
 
 
-<div class="chunk" id="pg"><div class="rimage default"><img src="figure/pg.png" title="plot of chunk pg" alt="plot of chunk pg" class="plot" /></div></div>
+<div class="chunk" id="pg"><div class="rimage default"><img id="activity-pg" src="figure/pg.png" title="plot of chunk pg" alt="plot of chunk pg" class="plot" /></div></div>
 
   
 
 
-<div class="chunk" id="patio11"><div class="rimage default"><img src="figure/patio11.png" title="plot of chunk patio11" alt="plot of chunk patio11" class="plot" /></div></div>
+<div class="chunk" id="patio11"><div class="rimage default"><img id="activity-patio11" src="figure/patio11.png" title="plot of chunk patio11" alt="plot of chunk patio11" class="plot" /></div></div>
 
   
   
 
 
-<div class="chunk" id="jacquesm"><div class="rimage default"><img src="figure/jacquesm.png" title="plot of chunk jacquesm" alt="plot of chunk jacquesm" class="plot" /></div></div>
+<div class="chunk" id="jacquesm"><div class="rimage default"><img id="activity-jacquesm" src="figure/jacquesm.png" title="plot of chunk jacquesm" alt="plot of chunk jacquesm" class="plot" /></div></div>
 
   
 
 
-<div class="chunk" id="jrockway"><div class="rimage default"><img src="figure/jrockway.png" title="plot of chunk jrockway" alt="plot of chunk jrockway" class="plot" /></div></div>
+<div class="chunk" id="jrockway"><div class="rimage default"><img id="activity-jrockway" src="figure/jrockway.png" title="plot of chunk jrockway" alt="plot of chunk jrockway" class="plot" /></div></div>
 
   
   <h2> Using xts to aggregate and filter time series </h2>
@@ -286,7 +304,7 @@ monthly_xts = monthly_xts[!<span class="functioncall">time</span>(monthly_xts) %
     main = <span class="string">"Monthly numbers of posts"</span>, mgp = <span class="functioncall">c</span>(2.2, 1, 0), yaxt = <span class="string">"n"</span>, major.ticks = <span class="string">"years"</span>)
 <span class="functioncall">par</span>(mgp = <span class="functioncall">c</span>(3, 0.6, 0))
 <span class="functioncall">axis</span>(2, at = 0:5 * 5000, cex.axis = 0.7, labels = 0:5 * 5000)
-</pre></div></div><div class="rimage default"><img src="figure/monthly posts.png" title="plot of chunk monthly posts" alt="plot of chunk monthly posts" class="plot" /></div></div>
+</pre></div></div><div class="rimage default"><img id="monthly-posts" src="figure/monthly posts.png" title="plot of chunk monthly posts" alt="plot of chunk monthly posts" class="plot" /></div></div>
 
   <p> Let's aggregate post counts by day now </p>
 <div class="chunk" id="daily posts"><div class="rcode"><div class="source"><pre class="knitr r">daily_xts = <span class="functioncall">apply.daily</span>(all_posts_xts, sum)
@@ -297,7 +315,7 @@ daily_xts = daily_xts[!<span class="functioncall">time</span>(daily_xts) %<span 
     mgp = <span class="functioncall">c</span>(2.2, 1, 0), yaxt = <span class="string">"n"</span>, major.ticks = <span class="string">"years"</span>)
 <span class="functioncall">par</span>(mgp = <span class="functioncall">c</span>(1, 0.8, 0))
 <span class="functioncall">axis</span>(2, at = 0:11 * 100, cex.axis = 0.7, labels = 0:11 * 100)
-</pre></div></div><div class="rimage default"><img src="figure/daily posts.png" title="plot of chunk daily posts" alt="plot of chunk daily posts" class="plot" /></div></div>
+</pre></div></div><div class="rimage default"><img id="daily-posts" src="figure/daily posts.png" title="plot of chunk daily posts" alt="plot of chunk daily posts" class="plot" /></div></div>
 
   <p> In the chart above it seems as though the number of posts varies a lot day to day. It's hard to see what's really happening here because a lot of the data points might be covered by lines connecting them. Let's try and draw the same plot, except for each data point we draw a little circle and no lines to connect them. </p>
 <div class="chunk" id="dayly posts (points)"><div class="rcode"><div class="source"><pre class="knitr r"><span class="functioncall">par</span>(mar = <span class="functioncall">c</span>(3.5, 4, 2, 0), las = 1, cex.axis = 0.7)
@@ -305,7 +323,7 @@ daily_xts = daily_xts[!<span class="functioncall">time</span>(daily_xts) %<span 
     mgp = <span class="functioncall">c</span>(2.2, 1, 0), yaxt = <span class="string">"n"</span>, major.ticks = <span class="string">"years"</span>, type = <span class="string">"p"</span>)
 <span class="functioncall">par</span>(mgp = <span class="functioncall">c</span>(1, 0.8, 0))
 <span class="functioncall">axis</span>(2, at = 0:11 * 100, cex.axis = 0.7, labels = 0:11 * 100)
-</pre></div></div><div class="rimage default"><img src="figure/dayly posts (points).png" title="plot of chunk dayly posts (points)" alt="plot of chunk dayly posts (points)" class="plot" /></div></div>
+</pre></div></div><div class="rimage default"><img id="daily-posts-circles" src="figure/dayly posts (points).png" title="plot of chunk dayly posts (points)" alt="plot of chunk dayly posts (points)" class="plot" /></div></div>
 
   
   <p> There are two lines or two clusters of data points. Presumably the upper one contains weekday data points and the one below contains weekends. To make sure it's true we will
@@ -317,11 +335,11 @@ daily_xts = daily_xts[!<span class="functioncall">time</span>(daily_xts) %<span 
 <span class="functioncall">points</span>(daily_xts[<span class="functioncall">.indexwday</span>(daily_xts) %<span class="keyword">in</span>% <span class="functioncall">c</span>(0, 6)], type = <span class="string">"p"</span>, col = <span class="string">"red"</span>)
 <span class="functioncall">par</span>(mgp = <span class="functioncall">c</span>(1, 0.8, 0))
 <span class="functioncall">axis</span>(2, at = 0:11 * 100, cex.axis = 0.7, labels = 0:11 * 100)
-</pre></div></div><div class="rimage default"><img src="figure/daily posts (coloured points).png" title="plot of chunk daily posts (coloured points)" alt="plot of chunk daily posts (coloured points)" class="plot" /></div></div>
+</pre></div></div><div class="rimage default"><img id="daily-posts-coloured-circles" src="figure/daily posts (coloured points).png" title="plot of chunk daily posts (coloured circles)" alt="plot of chunk daily posts (coloured circles)" class="plot" /></div></div>
 
   
   
-  <h2 id="outliers"> Outlier detection </h2>
+  <h2> Outlier detection </h2>
   <p> In the previous chart we can observe that weekdays have quite some outliers. Weekends seem to have only a few outliers on the days that fall just before the new year. The weekday outliers are presumably holidays. Assuming that the majority of HN readers are from the US those should be US holidays.</p>
   <p> For the sake of simplicity let's only look at the dates starting from the 1st of January 2012 and ending on the 22nd July 2013 (the last full day on the dataset). </p>
 <div class="chunk" id="daily outliers"><div class="rcode"><div class="source"><pre class="knitr r">weekdays_xts = daily_xts[<span class="functioncall">.indexwday</span>(daily_xts) %<span class="keyword">in</span>% 1:5]
@@ -340,7 +358,7 @@ weekdays_xts = weekdays_xts[<span class="string">"2012-01-01::2013-07-22"</span>
     major.ticks = <span class="string">"months"</span>)
 <span class="functioncall">par</span>(mgp = <span class="functioncall">c</span>(1, 0.8, 0))
 <span class="functioncall">axis</span>(2, at = 2:11 * 100, cex.axis = 0.7, labels = 2:11 * 100)
-</pre></div></div><div class="rimage default"><img src="figure/daily outliers.png" title="plot of chunk daily outliers" alt="plot of chunk daily outliers" class="plot" /></div></div>
+</pre></div></div><div class="rimage default"><img id="outliers" src="figure/daily outliers.png" title="plot of chunk daily outliers" alt="plot of chunk daily outliers" class="plot" /></div></div>
 
   <p> To avoid/minimize the effects of trend and seasonality we're going to smooth the curve using lowess smoother and then find outliers on the residuals we'll get after subtracting every datapoint from its smoothed value.</p>
 <div class="chunk" id="daily outliers smoothed"><div class="rcode"><div class="source"><pre class="knitr r">datapoints = <span class="functioncall">coredata</span>(weekdays_xts)[, 1]
@@ -352,7 +370,7 @@ index = <span class="functioncall">index</span>(weekdays_xts)
     major.ticks = <span class="string">"months"</span>)
 <span class="functioncall">lines</span>(index, smoothed_datapoints$y, col = <span class="string">"red"</span>)
 <span class="functioncall">axis</span>(2, at = 2:11 * 100, cex.axis = 0.7, labels = 2:11 * 100)
-</pre></div></div><div class="rimage default"><img src="figure/daily outliers smoothed.png" title="plot of chunk daily outliers smoothed" alt="plot of chunk daily outliers smoothed" class="plot" /></div></div>
+</pre></div></div><div class="rimage default"><img id="outliers-smoothed" src="figure/daily outliers smoothed.png" title="plot of chunk daily outliers smoothed" alt="plot of chunk daily outliers smoothed" class="plot" /></div></div>
 
   
   <p> Let's see how the detrended graph looks like and mark the outliers with red circles. </p>
@@ -365,7 +383,7 @@ outliers = <span class="functioncall">boxplot.stats</span>(weekdays_residuals)$o
 <span class="functioncall">points</span>(index[<span class="functioncall">which</span>(weekdays_residuals %<span class="keyword">in</span>% outliers)], weekdays_residuals[<span class="functioncall">which</span>(weekdays_residuals %<span class="keyword">in</span>% 
     outliers)], col = <span class="string">"red"</span>)
 <span class="functioncall">axis</span>(2, at = -5:3 * 100, cex.axis = 0.7, labels = -5:3 * 100)
-</pre></div></div><div class="rimage default"><img src="figure/daily outliers detrended.png" title="plot of chunk daily outliers detrended" alt="plot of chunk daily outliers detrended" class="plot" /></div></div>
+</pre></div></div><div class="rimage default"><img id="outliers-detrended" src="figure/daily outliers detrended.png" title="plot of chunk daily outliers detrended" alt="plot of chunk daily outliers detrended" class="plot" /></div></div>
 
   
   <p> Next we output the outlier dates and draw the original weekday chart with outliers marked </p>
@@ -393,7 +411,7 @@ index[<span class="functioncall">which</span>(weekdays_residuals %<span class="k
 <span class="functioncall">points</span>(index[<span class="functioncall">which</span>(weekdays_residuals %<span class="keyword">in</span>% outliers)], datapoints[<span class="functioncall">which</span>(weekdays_residuals %<span class="keyword">in</span>% 
     outliers)], col = <span class="string">"red"</span>)
 <span class="functioncall">axis</span>(2, at = 2:11 * 100, cex.axis = 0.7, labels = 2:11 * 100)
-</pre></div></div><div class="rimage default"><img src="figure/daily outliers marked.png" title="plot of chunk daily outliers marked" alt="plot of chunk daily outliers marked" class="plot" /></div></div>
+</pre></div></div><div class="rimage default"><img id="outliers-marked" src="figure/daily outliers marked.png" title="plot of chunk daily outliers marked" alt="plot of chunk daily outliers marked" class="plot" /></div></div>
 
   
   <h2> Attempting to explain the outliers </h2>
@@ -436,7 +454,7 @@ index[<span class="functioncall">which</span>(weekdays_residuals %<span class="k
   </div>
   
   <h2>Final word</h2>
-  <p>I hope the examples will be useful for someone as a learning material or someone will enjoy seeing the HN stats charts. Please let me know if you do any interesting experiments with the <a href='https://github.com/vrepsys/hn-analytics'>HN metadata posted on Github</a>. Leave any comments on <a href="" class="hn-link">this HN thread</a>. To get in touch send me an <a href="mailto:valdemaras@gmail.com?Subject=Hello">email</a> or <a href="https://twitter.com/vrepsys">follow me on twitter</a>. </p>
+  <p>I hope the examples will be useful for someone as a learning material or someone will enjoy seeing the HN stats charts. Please let me know if you do any interesting experiments with the <a href='https://github.com/vrepsys/hn-analytics'>HN metadata posted on Github</a>. <!--Leave any comments on <a href="" class="hn-link">this HN thread</a>.--> To get in touch send me an <a href="mailto:valdemaras@gmail.com?Subject=Hello">email</a> or <a href="https://twitter.com/vrepsys">follow me on twitter</a>. </p>
   <p> Thanks to <a href="http://adom.as/">Adomas Paltanavičius</a> for proofreading this text.</p>
   <div style="height: 120px;"></div>
   

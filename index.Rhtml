@@ -26,8 +26,26 @@ end.rcode-->
     <h1 style="margin-bottom: 5px;"> Analysing Hacker News Metadata with R </h1>
     <div class="name">by <a href="http://valdemaras.repsys.me">Val Repšys</a> &nbsp; &nbsp; 2012-09-03 </div>
     <p class="summary">
-      This page provides a set of examples showing how you can extract various statistics from <a href='http://news.ycombinator.com'>Hacker News</a> metadata using <a href="http://www.r-project.org/">R</a>: simple statistics such as <a href="#simple-stats">top domains and top commenters</a> as well as more complex things like <a href="#charts">charting activity patterns of specific users</a> and <a href="#outliers">activity outlier detection</a>. You can <a href="#charts">scroll down and just look at the charts</a> or go through the whole document and even run the code on your machine for the full experience.
+      This page provides a set of examples showing how you can extract various statistics from <a href='http://news.ycombinator.com'>Hacker News</a> metadata using <a href="http://www.r-project.org/">R</a>: simple statistics such as <a href="#simple-stats">top domains and top commenters</a> as well as more complex things like <a href="#charts">charting activity patterns of specific users</a> and <a href="#outliers">activity outlier detection</a>. You can use the thumbnainls to scroll down and just take a quick look at the charts or you can go through the whole document and even run the code on your machine for the full experience.
     </p>
+    
+    <div class="clearfix">
+      <a href="#activity-tptacek" class="thumbnail"><img src="figure/tptacek.png" title="Daily activity chart: tptacek" /></a>
+      <a href="#activity-pg" class="thumbnail"><img src="figure/pg.png" title="Daily activity chart: pg" /></a>
+      <a href="#activity-patio11" class="thumbnail"><img src="figure/patio11.png" title="Daily activity chart: patio11" /></a>
+      <a href="#activity-jacquesm" class="thumbnail"><img src="figure/jacquesm.png" title="Daily activity chart: jacquesm" /></a>
+      <a href="#activity-jrockway" class="thumbnail"><img src="figure/jrockway.png" title="Daily activity chart: jrockway" /></a>
+      <a href="#monthly-posts" class="thumbnail"><img src="figure/monthly posts.png" title="Monthly numbers of posts" /></a>
+      <a href="#daily-posts" class="thumbnail"><img src="figure/daily posts.png" title="Daily numbers of posts" /></a>
+      <a href="#daily-posts-circles" class="thumbnail"><img src="figure/dayly posts (points).png" title="Daily numbers of posts (circles)" /></a>
+      <a href="#daily-posts-coloured-circles" class="thumbnail"><img src="figure/daily posts (coloured points).png" title="Daily numbers of posts (coloured circles)" /></a>
+      <a href="#outliers" class="thumbnail"><img src="figure/daily outliers.png" title="Daily numbers of posts from 2011-01-01 to 2013-07-22" /></a>
+      <a href="#outliers-smoothed" class="thumbnail"><img src="figure/daily outliers smoothed.png" title="Daily numbers of posts from 2011-01-01 to 2013-07-22 + smoothed curve" /></a>
+      <a href="#outliers-detrended" class="thumbnail"><img src="figure/daily outliers detrended.png" title="Daily numbers of posts from 2011-01-01 to 2013-07-22 detrended" /></a>
+      <a href="#outliers-marked" class="thumbnail"><img src="figure/daily outliers marked.png" title="Daily numbers of posts from 2011-01-01 to 2013-07-22, outliers marked" /></a>
+    </div>    
+    
+    
     <p> <span style="font-weight: bold">About me and disclaimer</span> You can find more about me on my <a href="http://valdemaras.repsys.me">homepage</a>. I'm interested in data and visualisation. I learned R while creating the examples below so don't take them for granted. If you notice any errors/mistakes or you know how to do the same things better please let me know! Let me know as well if you found this page useful or interesting! <br/> <br/>
     <a href="#" class='hn-link'>Discuss on Hacker News</a>
   
@@ -150,7 +168,7 @@ end.rcode-->
   <p> Notice the gap somewhere between 2:00 and 10:00. Presumably this is night time in this particular user's timezone. 
   Likely this user is located in the PST timezone, which is 3 or 4 hours behind EST depending on daylight saving periods.</p>
   
-  <p> Now let's look at other top 5 users' charts </p>
+  <p> Below find other top 5 users' charts. One thing that struck me about those charts is the lack of apparent sleep patterns in some of them. Other than that I will leave the reader to make their own conclusions. </p>
   
   <!--begin.rcode user_time_chart, echo=FALSE, eval=FALSE
   users_comments = all_comments[all_comments$username == username, ]
@@ -207,7 +225,7 @@ end.rcode-->
   head(all_posts_xts)
   end.rcode-->
   <p> Once we have an xts object we can use various aggregation and filtering functions. For example, let's aggregate the dates by month and plot the resulting object.<p>
-  <!--begin.rcode monthly posts, fig.width=9, fig.height=4, dpi=100
+  <!--begin.rcode monthly posts, fig.width=9, fig.height=5, dpi=100
   monthly_xts = apply.monthly(all_posts_xts, sum)
   # Remove the last month since it does not contain full data
   monthly_xts = monthly_xts[!time(monthly_xts) %in% time(last(monthly_xts))]
@@ -218,7 +236,7 @@ end.rcode-->
   axis(2, at=0:5*5000, cex.axis=0.7, labels=0:5*5000)
   end.rcode-->
   <p> Let's aggregate post counts by day now </p>
-  <!--begin.rcode daily posts, fig.width=9, fig.height=4, dpi=100
+  <!--begin.rcode daily posts, fig.width=9, fig.height=5, dpi=100
   daily_xts = apply.daily(all_posts_xts, sum)
   # Remove the last day
   daily_xts = daily_xts[!time(daily_xts) %in% time(last(daily_xts))]
@@ -229,7 +247,7 @@ end.rcode-->
   axis(2, at=0:11*100, cex.axis=0.7, labels=0:11*100)
   end.rcode-->
   <p> In the chart above it seems as though the number of posts varies a lot day to day. It's hard to see what's really happening here because a lot of the data points might be covered by lines connecting them. Let's try and draw the same plot, except for each data point we draw a little circle and no lines to connect them. </p>
-  <!--begin.rcode dayly posts (points), fig.width=9, fig.height=4, dpi=100
+  <!--begin.rcode dayly posts (points), fig.width=9, fig.height=5, dpi=100
   par(mar=c(3.5, 4, 2, 0), las=1, cex.axis=0.7)
   plot(daily_xts, ylim=c(0,1100), xlab='day', ylab='number of posts', main='Daily numbers of posts', 
        mgp=c(2.2,1,0), yaxt='n', major.ticks='years', type='p')
@@ -239,7 +257,7 @@ end.rcode-->
   
   <p> There are two lines or two clusters of data points. Presumably the upper one contains weekday data points and the one below contains weekends. To make sure it's true we will
   color weekends in red. </p>
-  <!--begin.rcode daily posts (coloured points), fig.width=9, fig.height=4, dpi=100
+  <!--begin.rcode daily posts (coloured points), fig.width=9, fig.height=5, dpi=100
   par(mar=c(3.5, 4, 2, 0), las=1, cex.axis=0.7)
   plot(daily_xts[.indexwday(daily_xts) %in% 1:5], ylim=c(0,1100), xlab='day', ylab='number of posts', main='Daily numbers of posts (weekends in red)', mgp=c(2.2,1,0), yaxt='n', major.ticks='years', type='p') 
   points(daily_xts[.indexwday(daily_xts) %in% c(0,6)], type='p', col='red') 
@@ -251,7 +269,7 @@ end.rcode-->
   <h2 id="outliers"> Outlier detection </h2>
   <p> In the previous chart we can observe that weekdays have quite some outliers. Weekends seem to have only a few outliers on the days that fall just before the new year. The weekday outliers are presumably holidays. Assuming that the majority of HN readers are from the US those should be US holidays.</p>
   <p> For the sake of simplicity let's only look at the dates starting from the 1st of January 2012 and ending on the 22nd July 2013 (the last full day on the dataset). </p>
-  <!--begin.rcode daily outliers, fig.width=9, fig.height=4, dpi=100
+  <!--begin.rcode daily outliers, fig.width=9, fig.height=5, dpi=100
   weekdays_xts = daily_xts[.indexwday(daily_xts) %in% 1:5]
   weekdays_xts = weekdays_xts['2012-01-01::2013-07-22']
   par(mar=c(3.5, 4, 2, 0), las=1, cex.axis=0.7)
@@ -261,7 +279,7 @@ end.rcode-->
   axis(2, at=2:11*100, cex.axis=0.7, labels=2:11*100)
   end.rcode-->
   <p> To avoid/minimize the effects of trend and seasonality we're going to smooth the curve using lowess smoother and then find outliers on the residuals we'll get after subtracting every datapoint from its smoothed value.</p>
-  <!--begin.rcode daily outliers smoothed, fig.width=9, fig.height=4, dpi=100
+  <!--begin.rcode daily outliers smoothed, fig.width=9, fig.height=5, dpi=100
   datapoints = coredata(weekdays_xts)[,1]
   smoothed_datapoints = lowess(datapoints, f=1/10)
   index = index(weekdays_xts)
@@ -272,7 +290,7 @@ end.rcode-->
   end.rcode-->
   
   <p> Let's see how the detrended graph looks like and mark the outliers with red circles. </p>
-  <!--begin.rcode daily outliers detrended, fig.width=9, fig.height=4, dpi=100
+  <!--begin.rcode daily outliers detrended, fig.width=9, fig.height=5, dpi=100
   weekdays_residuals = datapoints - smoothed_datapoints$y
   weekdays_residuals_xts = xts(weekdays_residuals, order.by=index(weekdays_xts))
   par(mar=c(3.5, 3, 2, 0), las=1, cex.axis=0.7)

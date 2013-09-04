@@ -2,6 +2,17 @@ body {
   font-family: 'Verdana';
 }
 
+.thumbnail img {
+  width: 175px;
+
+}
+
+a.thumbnail {
+  display: block;
+  float: left;
+  background-color: white;
+}
+
 .name {
   font-size: 13px;
   color: #444;
