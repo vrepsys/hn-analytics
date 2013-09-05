@@ -81,6 +81,7 @@ a {
 
 a.hn-link {
   background-color: rgb(250, 228, 214);
+  vertical-align: top;
 }
 
 a.hn-link:hover {
